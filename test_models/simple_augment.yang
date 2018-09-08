@@ -1,0 +1,24 @@
+module A {
+    namespace "http://example.net/foo";
+    prefix "f";
+    extension immName {
+        argument text;
+    }
+    container A {
+        list B {
+            key b;
+            leaf b {
+                type string;
+            }
+        }
+    }
+    augment "/A:A/A:B" {
+        list C {
+        f:immName "AC";
+            key c;
+            leaf c {
+                type string;
+            }
+        }
+    }
+}

@@ -1,0 +1,4 @@
+module event {
+    organization 
+        "IETF NETCONF (Network Configuration) Working Group";
+}

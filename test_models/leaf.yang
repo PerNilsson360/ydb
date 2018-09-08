@@ -1,0 +1,19 @@
+module event {
+    list foo {
+        key bar;
+        leaf bar {
+            type string;
+        }
+        leaf baz1 {
+            mandatory true;
+            type string;
+        }
+        leaf baz2 {
+            type string;
+        }
+        leaf baz3 {
+            type string;
+            default "a default";
+        }
+    }
+}

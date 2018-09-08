@@ -1,0 +1,31 @@
+module schema {
+    container schema {
+        list class {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf-list children {
+                type string;
+            }
+            list attribute {
+                key name;
+                leaf name {
+                    type string;
+                }
+                leaf type {
+                    type string;
+                }
+                leaf index {
+                    type Int64;
+                }
+                leaf min_elements {
+                    type Int64;
+                }
+                leaf max_elements {
+                    type Int64;
+                }		
+            }
+        }
+    }
+}

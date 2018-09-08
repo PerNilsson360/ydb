@@ -1,0 +1,5 @@
+module A {
+    extension version {
+        argument "value";
+    }   
+}

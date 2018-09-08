@@ -1,0 +1,14 @@
+module system {
+    list ManagedElement {
+        key managedElementId;
+        leaf managedElementId {
+            type string;
+        }
+        list Schema {
+            key schemaId;
+            leaf schemaId {
+                tttype string;
+            }
+        }
+    }
+}

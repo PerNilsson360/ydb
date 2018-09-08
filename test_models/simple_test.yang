@@ -1,0 +1,14 @@
+module event {
+    list foo {
+        key bar;
+        leaf bar {
+            type string;
+        }
+        list baz {
+            key bar;
+            leaf bar {
+                type string;
+            }
+        }
+    }
+}

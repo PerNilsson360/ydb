@@ -1,0 +1,13 @@
+module container_simple {
+    container A {
+	list B {
+	    key b1;
+	    leaf b1 {
+		type string;
+	    }
+	    leaf-list b2 {
+		type string;
+	    }   
+	}
+    }
+}

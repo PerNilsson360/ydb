@@ -1,0 +1,21 @@
+module A {
+    namespace "http://example.net/foo";
+    prefix "f";
+    container A {
+        list B {
+            key b;
+            leaf b {
+                type string;
+            }
+            uses f:G;
+        }
+    }
+    grouping G {
+        list C {
+            key c;
+            leaf c {
+                type string;
+            }
+        }
+    }
+}

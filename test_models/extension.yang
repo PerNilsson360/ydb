@@ -1,0 +1,31 @@
+module event {
+    namespace "http://example.net/foo";
+    prefix "f";
+    grouping "g2" {
+        list l2 {
+            key k2;
+            leaf k2 {
+                type string;
+            }
+        }
+    }
+    grouping "g1" {
+        list l1 {
+            key k1;
+            leaf k1 {
+                type string;
+            }
+        }
+        uses g2;
+    }
+    extension name {
+        argument text;
+    }
+    list foo {
+        key bar;
+        leaf bar {
+            type string;
+        }
+        f:name "eventFoo";
+    }
+}
