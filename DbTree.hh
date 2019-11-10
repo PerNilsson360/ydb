@@ -16,9 +16,6 @@ class InteriorNode;
 }
 }
 
-namespace Ydb
-{
-
 struct CStrLess {
     bool operator() (const char* l, const char* r) const {
         return strcmp(l, r) < 0;
@@ -45,13 +42,13 @@ public:
     Type* findOrCreate(const std::string& s, 
                        Yang::Ast::InteriorNode* schemaRef);
     Type* find(const std::string& s);
-    std::vector<Ydb::Vals>& getLeafs();
-    void replace(const std::vector<Ydb::Vals>& leafs);
+    std::vector<Vals>& getLeafs();
+    void replace(const std::vector<Vals>& leafs);
     void print() const;
     Yang::Ast::InteriorNode& getSchemaObj();
 protected:
     const DbVal* _key;
-    std::vector<Ydb::Vals> _leafs;
+    std::vector<Vals> _leafs;
     Types _types;
     const Type* _parent;
 };
@@ -77,7 +74,5 @@ protected:
     Keys _keys;
     const Key* _parent;
 };    
-
-}
 
 #endif

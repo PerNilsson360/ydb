@@ -18,8 +18,7 @@ class InteriorNode;
 } 
 }
 
-namespace Ydb
-{
+
 typedef std::map<std::string, Yang::Ast::ModuleBase*> Mods;
 
 class Modules
@@ -44,7 +43,5 @@ private:
     void addSchema(const std::string& fileName);
     Modules  _modules;
 };
-
-}
 
 #endif

@@ -194,7 +194,7 @@ Yang::Ast::ModuleBases* moduleBases;
     Yang::Ast::BelongsTo* belongsTo;
     Yang::Ast::Revision* revision;
     Yang::Ast::Extension* extension;
-    Ydb::Common::Qname* qval;
+    Common::Qname* qval;
     Yang::Ast::FractionDigits* fractionDigits;
     Yang::Ast::Ranges* ranges;
     Yang::Ast::Length* length;
@@ -235,7 +235,7 @@ Yang::Ast::ModuleBases* moduleBases;
     Yang::Ast::AbsoluteSchemaNodeId* absoluteSchemaNodeId;
     Yang::Ast::DescendantSchemaNodeId* descendantSchemaNodeId;
     Yang::Ast::Nodes* lval;
-    Ydb::Common::Qnames* qlval;
+    Common::Qnames* qlval;
 }
 
 %%
@@ -1227,7 +1227,7 @@ key_stmt
 /*    key-arg-str         = < a string that matches the rule > < key-arg > */
 /*    key-arg             = node-identifier *(sep node-identifier) */
 key_arg
-: node_identifier                             { $$ = new Ydb::Common::Qnames(1, $1); }
+: node_identifier                             { $$ = new Common::Qnames(1, $1); }
 | key_arg node_identifier                     { $1->push_back($2); $$ = $1; }
 ;
 
@@ -1728,8 +1728,8 @@ notification_stmt_body_stmt
 /*                               *((yang-stmt / unknown-statement) optsep) */
 /*                            "}") stmtsep */
 unknown_stmt
-: IDENTIFIER ':' IDENTIFIER ';'                         { $$ = new Yang::Ast::Unknown(new Ydb::Common::Qname($1, $3), 0, 0); }
-|  IDENTIFIER ':' IDENTIFIER string ';'                 { $$ = new Yang::Ast::Unknown(new Ydb::Common::Qname($1, $3), $4, 0); }
+: IDENTIFIER ':' IDENTIFIER ';'                         { $$ = new Yang::Ast::Unknown(new Common::Qname($1, $3), 0, 0); }
+|  IDENTIFIER ':' IDENTIFIER string ';'                 { $$ = new Yang::Ast::Unknown(new Common::Qname($1, $3), $4, 0); }
   /* | IDENTIFIER ':' IDENTIFIER '{' unknown_stmt_body '}' */
 ;
 
@@ -1888,8 +1888,8 @@ descendant_schema_nodeid
 
 /*    node-identifier     = [prefix ":"] identifier */
 node_identifier
-: IDENTIFIER                                                                   { $$ = new Ydb::Common::Qname(0, $1); }
-| IDENTIFIER ':' IDENTIFIER                                                    { $$ = new Ydb::Common::Qname($1, $3); }
+: IDENTIFIER                                                                   { $$ = new Common::Qname(0, $1); }
+| IDENTIFIER ':' IDENTIFIER                                                    { $$ = new Common::Qname($1, $3); }
 ;
 
 /*    ;; Instance Identifiers */
@@ -2025,8 +2025,8 @@ node_identifier
 /*    identifier-ref-arg-str = < a string that matches the rule > < identifier-ref-arg > */
 /*    identifier-ref-arg  = identifier-ref */
 identifier_ref
-: IDENTIFIER                            { $$ =  new Ydb::Common::Qname(0, $1); }
-| IDENTIFIER ':' IDENTIFIER             { $$ =  new Ydb::Common::Qname($1, $3); }
+: IDENTIFIER                            { $$ =  new Common::Qname(0, $1); }
+| IDENTIFIER ':' IDENTIFIER             { $$ =  new Common::Qname($1, $3); }
 ;
 
 /*    identifier-ref      = [prefix ":"] identifier */

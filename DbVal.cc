@@ -1,8 +1,5 @@
 #include "DbVal.hh"
 
-using namespace Ydb;
-
-
 bool 
 DbVal::operator > (const Bool& val) const
 {

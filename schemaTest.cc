@@ -6,8 +6,6 @@
 #include "Schema.hh"
 #include "YangAst.hh"
 
-using namespace Ydb;
-
 void 
 extension()
 {

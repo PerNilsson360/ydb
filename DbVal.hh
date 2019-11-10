@@ -6,9 +6,6 @@
 #include <iostream>
 #include <list>
 
-namespace Ydb
-{
-
 template <class T> struct Dtor 
 {
     void operator () (const T* n) {
@@ -143,7 +140,5 @@ struct DbValGt
 };
 
 typedef std::list<const DbVal*> Vals;
-
-}
 
 #endif

@@ -4,9 +4,6 @@
 #include "Common.hh"
 #include "DbVal.hh"
 
-namespace Ydb
-{
-
 /*
        +---------------------+-------------------------------------+
        | Name                | Description                         |
@@ -127,8 +124,5 @@ class DerivedString : public SchemaString
 class DerivedInt64 : public SchemaInt64
 {
 };
-
-
-}
 
 #endif

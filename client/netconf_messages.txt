@@ -1,0 +1,97 @@
+// Capability exchange
+//Server
+<?xml version="1.0" encoding="UTF-8"?>
+ <hello>
+   <capabilities>
+     <capability>
+       urn:ietf:params:xml:ns:netconf:base:1.0
+     </capability>
+     <capability>
+       urn:ietf:params:ns:netconf:capability:startup:1.0
+     </capability>
+   </capabilities>
+   <session-id>4<session-id>
+ </hello>
+ ]]>]]>
+
+// client
+ <?xml version="1.0" encoding="UTF-8"?>
+ <hello>
+   <capabilities>
+     <capability>
+       urn:ietf:params:xml:ns:netconf:base:1.0
+     </capability>
+   </capabilities>
+ </hello>
+ ]]>]]>
+
+// Get config
+// client
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="105"
+xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <get-config>
+    <source><running/></source>
+    <config xmlns="http://example.com/schema/1.2/config">
+     <users/>
+    </config>
+  </get-config>
+</rpc>
+]]>]]>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply message-id="105"
+xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <config xmlns="http://example.com/schema/1.2/config">
+    <users>
+      <user><name>root</name><type>superuser</type></user>
+      <user><name>fred</name><type>admin</type></user>
+      <user><name>barney</name><type>admin</type></user>
+    </users>
+  </config>
+</rpc-reply>
+]]>]]>
+
+// edit config
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="101"
+     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <top xmlns="http://example.com/schema/1.2/config">
+        <interface>
+          <name>Ethernet0/0</name>
+          <mtu>1500</mtu>
+        </interface>
+      </top>
+    </config>
+  </edit-config>
+</rpc>
+]]>]]>
+
+// response
+<rpc-reply message-id="101"
+           xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <ok/>
+</rpc-reply>
+
+
+// close session
+// client
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="106" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <close-session/>
+</rpc>
+]]>]]>
+
+// server
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply id="106" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <ok/>
+</rpc-reply>
+]]>]]>
+
+

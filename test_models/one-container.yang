@@ -1,0 +1,7 @@
+module one-container {
+    container A {
+    	leaf a {
+	    type string;
+	}
+    }
+}

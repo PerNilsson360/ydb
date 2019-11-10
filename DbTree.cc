@@ -5,8 +5,6 @@
 #include "Common.hh"
 #include "DbTree.hh"
 
-using namespace Ydb;
-
 // Key
 Key::Key() : _key(0), _parent(0)
 {
@@ -61,14 +59,14 @@ Key::find(const std::string& s)
     return result;
 }
 
-std::vector<Ydb::Vals>& 
+std::vector<Vals>& 
 Key::getLeafs()
 {
     return _leafs;
 }
 
 void 
-Key::replace(const std::vector<Ydb::Vals>& leafs)
+Key::replace(const std::vector<Vals>& leafs)
 {
     // @todo this most likely leaks
     _leafs = leafs;
@@ -82,8 +80,8 @@ Key::print() const
     std::cerr << " {" << std::endl;
     for (unsigned int i = 0; i < _leafs.size(); i++) {
         std::cerr << "attr[" << i << "] = {";
-        const std::list<const Ydb::DbVal*>& vals = _leafs[i];
-        for (std::list<const Ydb::DbVal*>::const_iterator j = vals.begin();
+        const std::list<const DbVal*>& vals = _leafs[i];
+        for (std::list<const DbVal*>::const_iterator j = vals.begin();
              j != vals.end();
              ++j) {
             if (j != vals.begin()) std::cerr << ", ";
@@ -103,7 +101,7 @@ Yang::Ast::InteriorNode&
 Key::getSchemaObj()
 {
     if (_parent == 0) {
-        Ydb::Common::Error::err(__PRETTY_FUNCTION__, "Should not happen");
+        Common::Error::err(__PRETTY_FUNCTION__, "Should not happen");
     }
     return const_cast<Type*>(_parent)->getSchemaObj();
 }

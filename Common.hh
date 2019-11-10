@@ -8,8 +8,6 @@
 #include <map>
 #include <list>
 
-namespace Ydb
-{
 namespace Common
 {
 
@@ -54,10 +52,10 @@ private:
     std::unique_ptr<const std::string> _suffix;
 };
 
-typedef std::list<const Ydb::Common::Qname*> Qnames;
+typedef std::list<const Common::Qname*> Qnames;
 
 }
-#define YDB_ERROR(e) Ydb::Common::Error::err(__PRETTY_FUNCTION__, e)
-#define YDB_N_ERROR(e, n) Ydb::Common::Error::err(__PRETTY_FUNCTION__, e, n)
-}
+#define YDB_ERROR(e) Common::Error::err(__PRETTY_FUNCTION__, e)
+#define YDB_N_ERROR(e, n) Common::Error::err(__PRETTY_FUNCTION__, e, n)
+
 #endif

@@ -1,9 +1,14 @@
+#include "Node.hh"
+#include "Schema.hh"
+#include "DomUtils.hh"
+
 #include "YangAst.hh"
 
-#include "Schema.hh"
-
-using namespace Yang::Ast;
-
+namespace Yang
+{
+    
+namespace Ast
+{
 // Node
 
 void 
@@ -19,7 +24,7 @@ Node::findUnknown(const std::string& name) const
     const Unknown* result = 0;
     for (size_t i = 0, size = _unknowns.size(); i < size; i++) {
         const Unknown* u = _unknowns[i];
-        const Ydb::Common::Qname& qname = u->getQname();
+        const Common::Qname& qname = u->getQname();
         if (qname.getSuffix() == name) {
             result = u;
             break;
@@ -30,7 +35,7 @@ Node::findUnknown(const std::string& name) const
 
 // StringBodyStatement
 void 
-StringBodyStatement::elaborate(Ydb::Schema* schema, Node* parent) 
+StringBodyStatement::elaborate(Schema* schema, Node* parent) 
 {
     Node::elaborate(schema, parent);
     if (_body.get() != 0) {
@@ -41,7 +46,7 @@ StringBodyStatement::elaborate(Ydb::Schema* schema, Node* parent)
 };
 
 void 
-StringBodyStatement::eval(Ydb::Schema* schema)
+StringBodyStatement::eval(Schema* schema)
 {
     if (_body.get() != 0) {
         for (Nodes::iterator i = _body->begin(); i != _body->end(); ++i) {
@@ -52,7 +57,7 @@ StringBodyStatement::eval(Ydb::Schema* schema)
 
 // QnameBodyStatement
 void 
-QnameBodyStatement::elaborate(Ydb::Schema* schema, Node* parent) 
+QnameBodyStatement::elaborate(Schema* schema, Node* parent) 
 {
     Node::elaborate(schema, parent);
     if (_body.get() != 0) {
@@ -63,7 +68,7 @@ QnameBodyStatement::elaborate(Ydb::Schema* schema, Node* parent)
 };
 
 void 
-QnameBodyStatement::eval(Ydb::Schema* schema)
+QnameBodyStatement::eval(Schema* schema)
 {
     if (_body.get() != 0) {
         for (Nodes::iterator i = _body->begin(); i != _body->end(); ++i) {
@@ -75,13 +80,13 @@ QnameBodyStatement::eval(Ydb::Schema* schema)
 
 // ModuleBase
 void 
-ModuleBase::elaborate(Ydb::Schema* schema, Ydb::Modules* parent)
+ModuleBase::elaborate(Schema* schema, Modules* parent)
 {
     StringBodyStatement::elaborate(schema, 0);
 }
 
 void 
-ModuleBase::eval(Ydb::Schema* schema, Ydb::Modules* parent)
+ModuleBase::eval(Schema* schema, Modules* parent)
 {
     StringBodyStatement::eval(schema);
 }
@@ -162,7 +167,7 @@ ModuleBase::findInteriorNode(const std::string& name)
 
 // Module
 void
-Module::elaborate(Ydb::Schema* schema, Ydb::Modules* parent)
+Module::elaborate(Schema* schema, Modules* parent)
 {
     // modules needs to be added first so imports can find them
     //parent->addModule(*_s, this);
@@ -171,14 +176,14 @@ Module::elaborate(Ydb::Schema* schema, Ydb::Modules* parent)
 
 // SubModule
 void 
-SubModule::elaborate(Ydb::Schema* schema, Ydb::Modules* parent)
+SubModule::elaborate(Schema* schema, Modules* parent)
 {
     ModuleBase::elaborate(schema, parent);
 }
 
 // Import
 void
-Import::elaborate(Ydb::Schema* schema, Node* parent) 
+Import::elaborate(Schema* schema, Node* parent) 
 {
     Node::elaborate(schema, parent);
     parent->addImport(this);
@@ -193,13 +198,13 @@ Import::elaborate(Ydb::Schema* schema, Node* parent)
 }
 
 void 
-Import::eval(Ydb::Schema* schema)
+Import::eval(Schema* schema)
 {
 }
 
 // Extension
 void 
-Extension::elaborate(Ydb::Schema* schema, Node* parent)
+Extension::elaborate(Schema* schema, Node* parent)
 {
     StringBodyStatement::elaborate(schema, parent);
     parent->addExtension(this);
@@ -216,7 +221,7 @@ Extension::addArgument(const std::string* a)
 
 // Key
 void 
-Key::elaborate(Ydb::Schema* schema, Node* parent)
+Key::elaborate(Schema* schema, Node* parent)
 {
     Node::elaborate(schema, parent);
     parent->addKey(this);
@@ -279,7 +284,7 @@ Case::addList(InteriorNode* list)
 
 // Mandatory
 void
-Mandatory::elaborate(Ydb::Schema* schema, Node* parent)
+Mandatory::elaborate(Schema* schema, Node* parent)
 {
     BoolStatement::elaborate(schema, parent);
     parent->setMandatory(_b);
@@ -306,55 +311,55 @@ Typedef::addDefault(const std::string& d)
 
 // Type
 void 
-Type::elaborate(Ydb::Schema* schema, Node* parent)
+Type::elaborate(Schema* schema, Node* parent)
 {
     QnameBodyStatement::elaborate(schema, parent);
     const std::string& type = _qname->getString();
     if (type == "binary") {
-        _type.reset(new Ydb::SchemaBinary());
+        _type.reset(new SchemaBinary());
     } else if (type == "bits") {
-        _type.reset(new Ydb::SchemaBits());
+        _type.reset(new SchemaBits());
     } else if (type == "boolean") {
-        _type.reset(new Ydb::SchemaBoolean());
+        _type.reset(new SchemaBoolean());
     } else if (type == "decimal64") {
-        _type.reset(new Ydb::SchemaDecimal64());
+        _type.reset(new SchemaDecimal64());
     } else if (type == "empty") {
-        _type.reset(new Ydb::SchemaEmpty());
+        _type.reset(new SchemaEmpty());
     } else if (type == "enumeration") {
-        _type.reset(new Ydb::SchemaEnumeration());
+        _type.reset(new SchemaEnumeration());
     } else if (type == "identityref") {
-        _type.reset(new Ydb::SchemaIdentityref());
+        _type.reset(new SchemaIdentityref());
     } else if (type == "instance-identifier") {
-        _type.reset(new Ydb::SchemaInstanceIdentifier());
+        _type.reset(new SchemaInstanceIdentifier());
     } else if (type == "int8") {
-        _type.reset(new Ydb::SchemaInt8());
+        _type.reset(new SchemaInt8());
     } else if (type == "int16") {
-        _type.reset(new Ydb::SchemaInt16());
+        _type.reset(new SchemaInt16());
     } else if (type == "int32") {
-        _type.reset(new Ydb::SchemaInt32());
+        _type.reset(new SchemaInt32());
     } else if (type == "int64") {
-        _type.reset(new Ydb::SchemaInt64());
+        _type.reset(new SchemaInt64());
     } else if (type == "leafref") {
-        _type.reset(new Ydb::SchemaLeafref());
+        _type.reset(new SchemaLeafref());
     } else  if (type == "string") {
-        _type.reset(new Ydb::SchemaString());
+        _type.reset(new SchemaString());
     } else  if (type == "uint8") {
-        _type.reset(new Ydb::SchemaUInt8());
+        _type.reset(new SchemaUInt8());
     } else if (type == "uint16") {
-        _type.reset(new Ydb::SchemaInt16());
+        _type.reset(new SchemaInt16());
     } else if (type == "uint32") {
-        _type.reset(new Ydb::SchemaInt32());
+        _type.reset(new SchemaInt32());
     } else if (type == "uint64") {
-        _type.reset(new Ydb::SchemaInt64());
+        _type.reset(new SchemaInt64());
     } else if (type == "union") {
-        _type.reset(new Ydb::SchemaUnion());
+        _type.reset(new SchemaUnion());
     } else {
         std::cout << "Not a supported type: "  << type << std::endl;
     }
     parent->addType(this);
 }
 
-const Ydb::DbVal* 
+const DbVal* 
 Type::create(const std::string& data) const
 {
     return _type->create(data);
@@ -368,7 +373,7 @@ Type::getDefault() const
 }
 // Grouping
 void 
-Grouping::elaborate(Ydb::Schema* schema, Node* parent)
+Grouping::elaborate(Schema* schema, Node* parent)
 {
     StringBodyStatement::elaborate(schema, parent);
     parent->addGrouping(this);
@@ -422,12 +427,12 @@ InteriorNode::addList(InteriorNode* list)
 }
 
 void 
-InteriorNode::createLeafs(const Ydb::Common::KeyVals& leafs, 
-                  std::vector<Ydb::Vals>& vals) const
+InteriorNode::createLeafs(const Common::KeyVals& leafs, 
+                  std::vector<Vals>& vals) const
 {
     // create DB leaf objects fro´m strings
     vals.resize(_leafs.size());
-    for (Ydb::Common::KeyVals::const_iterator i = leafs.begin();
+    for (Common::KeyVals::const_iterator i = leafs.begin();
          i != leafs.end();
          ++i) {
         const std::string& leafName = i->first;
@@ -437,16 +442,16 @@ InteriorNode::createLeafs(const Ydb::Common::KeyVals& leafs,
         }
         const LeafBase* leaf = j->second;
         const Type& type = leaf->getType();
-        Ydb::Vals& vs = vals[leaf->getIndex()];
-        const Ydb::DbVal* val = type.create(i->second);
+        Vals& vs = vals[leaf->getIndex()];
+        const DbVal* val = type.create(i->second);
         // @todo it must be possible to skip one find and do it faster
-        Ydb::Vals::iterator k = std::find_if(vs.begin(), vs.end(), Ydb::DbValEq(val));
+        Vals::iterator k = std::find_if(vs.begin(), vs.end(), DbValEq(val));
         if (k != vs.end()) {
             std::stringstream ss;
             ss << "duplicate value in leaf: " << *val;
             YDB_N_ERROR(ss.str(), leafName.c_str());
         }
-        k = std::find_if(vs.begin(), vs.end(), Ydb::DbValGt(val));
+        k = std::find_if(vs.begin(), vs.end(), DbValGt(val));
         vs.insert(k, val);
     }
     // validate cardinalities
@@ -472,17 +477,34 @@ InteriorNode::findInteriorNode(const std::string& name)
     return result;
 }
 
+const Node*
+InteriorNode::findNode(const std::string& name) const
+{
+    const Node* result = 0;
+    NamedInteriorNodes::const_iterator i = _interiorNodes.find(name);
+    if (i != _interiorNodes.end()) {
+        result = i->second;
+	return result;
+    }
+    Leafs::const_iterator j = _leafs.find(name);
+    if (j != _leafs.end()) {
+        result = j->second;
+	return result;
+    }
+    return result;
+}
+    
 // Uses
 void 
-Uses::elaborate(Ydb::Schema* schema, Node* parent)
+Uses::elaborate(Schema* schema, Node* parent)
 {
     QnameBodyStatement::elaborate(schema, parent);
 }
 
 void 
-Uses::eval(Ydb::Schema* schema) 
+Uses::eval(Schema* schema) 
 {
-    const Ydb::Common::Qname& qname = getQname();
+    const Common::Qname& qname = getQname();
     Grouping* grouping = _parent->findGrouping(qname.getSuffix());
     if (grouping == 0) {
         YDB_N_ERROR("Failed finding grouping", qname.getSuffix().c_str());
@@ -499,7 +521,7 @@ Uses::eval(Ydb::Schema* schema)
 
 // Augment
 void 
-Augment::elaborate(Ydb::Schema* schema, Node* parent)
+Augment::elaborate(Schema* schema, Node* parent)
 {
     Node::elaborate(schema, parent);
     for (Nodes::const_iterator i = _body->begin(); 
@@ -519,16 +541,16 @@ Augment::elaborate(Ydb::Schema* schema, Node* parent)
 // shorthand statement (see Section 7.9.2) can be used within the
 // "augment" statement.
 void 
-Augment::eval(Ydb::Schema* schema) 
+Augment::eval(Schema* schema) 
 {
     for (Nodes::const_iterator i = _body->begin(); 
          i != _body->end(); 
          ++i) {
         (*i)->eval(schema);
     }
-    const Ydb::Common::Qnames& _qnames = _asni->getQnames();
+    const Common::Qnames& _qnames = _asni->getQnames();
     // grammar ensures size >0
-    Ydb::Common::Qnames::const_iterator i = _qnames.begin();
+    Common::Qnames::const_iterator i = _qnames.begin();
     // @todo handle prefixes an more target nodes
     const std::string& name = (*i)->getSuffix();
     i++;
@@ -576,7 +598,7 @@ Augment::addList(InteriorNode* list)
 
 // Default
 void 
-Default::elaborate(Ydb::Schema* schema, Node* parent)
+Default::elaborate(Schema* schema, Node* parent)
 {
     StringStatement::elaborate(schema, parent);
     parent->addDefault(getString());
@@ -584,7 +606,7 @@ Default::elaborate(Ydb::Schema* schema, Node* parent)
 
 // Container
 void 
-Container::elaborate(Ydb::Schema* schema, Node* parent)
+Container::elaborate(Schema* schema, Node* parent)
 {
     StringBodyStatement::elaborate(schema, parent);
     parent->addList(this);
@@ -611,9 +633,15 @@ Container::findGrouping(const std::string& name)
     return (result == 0 ? _parent->findGrouping(name) : result);
 }
 
+YDB::Node*
+Container::create(YDB::Node* parent, DomUtils& domUtils, DOMNode* dn) const
+{
+    return new YDB::Container(this, domUtils, parent, dn);
+}
+    
 // LeafBase
 void 
-LeafBase::elaborate(Ydb::Schema* schema, Node* parent)
+LeafBase::elaborate(Schema* schema, Node* parent)
 {
     StringBodyStatement::elaborate(schema, parent);
     parent->addLeaf(this);
@@ -647,7 +675,7 @@ LeafBase::addType(Type* type)
 
 // Leaf
 void 
-Leaf::eval(Ydb::Schema* schema)
+Leaf::eval(Schema* schema)
 {
     LeafBase::eval(schema);
     bool mandatory(false);
@@ -685,9 +713,15 @@ Leaf::addDefault(const std::string& d)
     _defaults.push_back(d);
 }
 
+YDB::Node*
+Leaf::create(YDB::Node* parent, DomUtils& domUtils, xercesc::DOMNode* dn) const
+{
+    return new YDB::Leaf(this, domUtils, parent, dn);
+}
+    
 // LeafList
 void 
-LeafList::eval(Ydb::Schema* schema)
+LeafList::eval(Schema* schema)
 {
     LeafBase::eval(schema);
     unsigned int defaultSize = _defaults.size();
@@ -705,14 +739,14 @@ LeafList::eval(Ydb::Schema* schema)
 
 // List
 void 
-List::elaborate(Ydb::Schema* schema, Node* parent)
+List::elaborate(Schema* schema, Node* parent)
 {
     StringBodyStatement::elaborate(schema, parent);
     parent->addList(this);
 }
 
 void 
-List::eval(Ydb::Schema* schema)
+List::eval(Schema* schema)
 {
     StringBodyStatement::eval(schema);
     if (_key.get() == 0) {
@@ -729,11 +763,11 @@ List::addKey(Key* key)
     _key.reset(key);
 }
 
-const Ydb::DbVal*
-List::createKey(const Ydb::Common::KeyVals& leafs) const {
-    std::vector<const Ydb::DbVal*> vals;
-    const Ydb::Common::Qnames& keys = _key->getKeys();
-    for (Ydb::Common::Qnames::const_iterator i = keys.begin(); 
+const DbVal*
+List::createKey(const Common::KeyVals& leafs) const {
+    std::vector<const DbVal*> vals;
+    const Common::Qnames& keys = _key->getKeys();
+    for (Common::Qnames::const_iterator i = keys.begin(); 
          i != keys.end();
          ++i) {
         const std::string& key = (*i)->getString();
@@ -744,7 +778,7 @@ List::createKey(const Ydb::Common::KeyVals& leafs) const {
                << ", count: " << keyCount << ", list: " << getString();
             YDB_ERROR(ss.str());
         }
-        Ydb::Common::KeyVals::const_iterator j = leafs.find(key);
+        Common::KeyVals::const_iterator j = leafs.find(key);
         Leafs::const_iterator k = _leafs.find(key);
         if (k == _leafs.end()) {
             YDB_ERROR("Could not find key leaf, inconsitent model");
@@ -753,18 +787,18 @@ List::createKey(const Ydb::Common::KeyVals& leafs) const {
         const Type& type = leaf->getType();
         vals.push_back(type.create(j->second));
     } 
-    const Ydb::DbVal* result;
+    const DbVal* result;
     switch (vals.size()) {
     case 0: 
         //  @todo memory leak
-        Ydb::Common::Error::err(__PRETTY_FUNCTION__, "Could not find key");
+        Common::Error::err(__PRETTY_FUNCTION__, "Could not find key");
         break;
     case 1:
         result = vals.front();
         break;
     default:
         //@todo implement
-        Ydb::Common::Error::err(__PRETTY_FUNCTION__, "Composite keys not implemented");
+        Common::Error::err(__PRETTY_FUNCTION__, "Composite keys not implemented");
     }
     return result;
 }
@@ -789,4 +823,8 @@ List::findGrouping(const std::string& name)
         result = i->second;
     }
     return (result == 0 ? _parent->findGrouping(name) : result);
+}
+
+}
+
 }

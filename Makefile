@@ -1,10 +1,13 @@
 CC = g++
-CXXFLAGS = -g -Winline --std=c++11
-OBJECTS = Common.o YangAst.o DbVal.o DbTree.o Db.o Schema.o y.tab.o lex.yy.o
+CXXFLAGS = -g -Winline  --std=c++14
+OBJECTS = Common.o YangAst.o DbVal.o DbTree.o Db.o Schema.o y.tab.o lex.yy.o Ydb.o Config.o Node.o NetconfMessage.o NetconfOperation.o NetconfResponse.o NetconfIdentities.o NetconfException.cc DomUtils.o YdbApi.o
 
 main: $(OBJECTS)
-	$(CC) $(CXXFLAGS) $(OBJECTS) test.cc -o test
-	$(CC) $(CXXFLAGS) $(OBJECTS) schemaTest.cc -o schemaTest
+	$(CC) $(CXXFLAGS) $(OBJECTS) main.cc -o ydb -lxerces-c -lpthread
+
+test: $(OBJECTS)
+	$(CC) $(CXXFLAGS) $(OBJECTS) test.cc -o test -lxerces-c -lpthread
+	$(CC) $(CXXFLAGS) $(OBJECTS) schemaTest.cc -o schemaTest -lxerces-c -lpthread
 
 y.tab.cc : parser.y
 	bison --verbose -y -d -o y.tab.cc parser.y
@@ -18,9 +21,10 @@ clean :
 	rm y.tab.hh
 	rm lex.yy.cc
 	rm y.output
-	rm test
-	rm schemaTest
-	rm TAGS
+	rm ydb
+#	rm test
+#	rm schemaTest
+#	rm TAGS
 	rm test_models/*~
 	rm *~
 

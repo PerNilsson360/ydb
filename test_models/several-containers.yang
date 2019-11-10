@@ -1,0 +1,17 @@
+module several-containers {
+    container A {
+    	leaf a {
+	    type string;
+	}
+	container B {
+	    leaf b {
+		type string;
+	    }
+	}
+    }
+    container C {
+    	leaf c {
+	    type string;
+	}
+    }
+}

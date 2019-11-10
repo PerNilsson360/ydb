@@ -1,0 +1,4 @@
+<ydb-config>
+  <schema-path>test_models</schema-path>
+  <schema>several-containers.yang</schema>
+</ydb-config>

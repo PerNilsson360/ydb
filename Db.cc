@@ -5,8 +5,6 @@
 #include "DbTree.hh"
 #include "Db.hh"
 
-using namespace Ydb;
-
 // class Db
 Db::Db(const std::list<std::string>& schemas) :
     _roots(new Key(new Singelton(), 0)),
@@ -19,12 +17,12 @@ Db::~Db()
 }
 
 Obj& 
-Db::merge(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Db::merge(const std::string& name, const Common::KeyVals& leafs)
 {
 }
 
 Obj
-Db::replace(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Db::replace(const std::string& name, const Common::KeyVals& leafs)
 {
     Yang::Ast::InteriorNode* n = _schema.findInteriorNode(name);
     if (n == 0) {
@@ -42,14 +40,14 @@ Db::replace(const std::string& name, const Ydb::Common::KeyVals& leafs)
     }
     Type* t = _roots->findOrCreate(name, n);
     Key* k = t->findOrCreate(key, t);
-    std::vector<Ydb::Vals> vals;
+    std::vector<Vals> vals;
     n->createLeafs(leafs, vals);
     k->replace(vals);
     return Obj(k);
 }
 
 Obj* 
-Db::find(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Db::find(const std::string& name, const Common::KeyVals& leafs)
 {
     const Yang::Ast::Node* node = _schema.findInteriorNode(name);
     if (node == 0) {
@@ -83,12 +81,12 @@ Db::printSchema()
 
 // class Obj
 Obj& 
-Obj::merge(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Obj::merge(const std::string& name, const Common::KeyVals& leafs)
 {
 }
 
 Obj
-Obj::replace(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Obj::replace(const std::string& name, const Common::KeyVals& leafs)
 {
     Yang::Ast::InteriorNode& schemaObj = _key->getSchemaObj();
     Yang::Ast::InteriorNode* n = schemaObj.findInteriorNode(name);
@@ -106,21 +104,21 @@ Obj::replace(const std::string& name, const Ydb::Common::KeyVals& leafs)
     }
     Type* t = _key->findOrCreate(name, n);
     Key* k = t->findOrCreate(key, t);
-    std::vector<Ydb::Vals> vals;
+    std::vector<Vals> vals;
     n->createLeafs(leafs, vals);
     k->replace(vals);
     return Obj(k);
 }
 
 void
-Obj::getLeafs(Ydb::Common::KeyVals& keyVals) const
+Obj::getLeafs(Common::KeyVals& keyVals) const
 {
-    const std::vector<Ydb::Vals>& leafs = _key->getLeafs();
+    const std::vector<Vals>& leafs = _key->getLeafs();
     const Yang::Ast::InteriorNode& schemaObj = _key->getSchemaObj();
     for (int i = 0, size = leafs.size(); i < size; i++) {
         const Yang::Ast::LeafBase& leaf = schemaObj.getLeaf(i);
         const std::string& leafName = leaf.getString();
-        const Ydb::Vals& vals = leafs[i];
+        const Vals& vals = leafs[i];
         if (vals.empty()) {
             typedef std::vector<std::string> Defaults;
             const Defaults& ds = leaf.getDefaults();
@@ -141,7 +139,7 @@ Obj::getLeafs(Ydb::Common::KeyVals& keyVals) const
 }
 
 Obj* 
-Obj::find(const std::string& name, const Ydb::Common::KeyVals& leafs)
+Obj::find(const std::string& name, const Common::KeyVals& leafs)
 {
     Yang::Ast::InteriorNode& schemaObj = _key->getSchemaObj();
     Yang::Ast::Node* node = schemaObj.findInteriorNode(name);

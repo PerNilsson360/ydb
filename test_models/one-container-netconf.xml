@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="101"
+     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <A>
+	<a>
+	  hello
+	</a>
+      </A>
+    </config>
+  </edit-config>
+</rpc>
+]]>]]>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="101"
+     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <get/>
+</rpc>
+]]>]]>

@@ -11,8 +11,6 @@
 extern FILE* yyin;
 extern Yang::Ast::ModuleBases* moduleBases;
 
-using namespace Ydb;
-
 //Modules
 void 
 Modules::addModule(const std::string& name, Yang::Ast::ModuleBase* module) 

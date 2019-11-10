@@ -2,10 +2,35 @@
 #include <string>
 #include <list>
 #include <iostream>
+#include <fstream>
 
 #include "Db.hh"
+#include "Ydb.hh"
 
-using namespace Ydb;
+void
+readFile(const std::string& name, std::string& result)
+{
+    std::string line;
+    std::ifstream file(name);
+    if (file.is_open()) {
+	while (getline(file, line)){
+	    result.append(line);
+	}
+	file.close();
+    }
+}
+
+void
+oneContainer()
+{
+    std::list<std::string> schemas = { "test_models/one-container.yang" };
+    Ydb ydb(schemas);
+    std::string dataFile("test_models/one-container-data.xml");
+    std::string data;
+    readFile(dataFile, data);
+    ydb.merge(data);
+}
+
 
 void
 dbValTest()
@@ -24,12 +49,12 @@ simpleReplaceTest()
 {
     std::list<std::string> files(1, "test_models/simple_test.yang");
     Db db(files);
-    Ydb::Common::KeyVals keyVals;
+    Common::KeyVals keyVals;
     keyVals.insert(std::make_pair("bar", "xyz"));
     Obj fooObj = db.replace("foo", keyVals);
     Obj bazObj = fooObj.replace("baz", keyVals);
     std::unique_ptr<Obj> obj(db.find("foo", keyVals));
-    Ydb::Common::KeyVals leafs;
+    Common::KeyVals leafs;
     obj->getLeafs(leafs);
     assert(leafs.size() == 1 && "'foo' does not have correct number of leafs");
     assert(leafs.count("bar") == 1 && "'foo' should have one bar leaf");
@@ -47,7 +72,7 @@ leafCardinality()
 {
     std::list<std::string> files(1, "test_models/leaf.yang");
     Db db(files);
-    Ydb::Common::KeyVals keyVals;
+    Common::KeyVals keyVals;
     keyVals.insert(std::make_pair("baz1", "xyz"));
     try {
         (void) db.replace("foo", keyVals);
@@ -84,7 +109,7 @@ leafDefault()
 {
     std::list<std::string> files(1, "test_models/leaf.yang");
     Db db(files);
-    Ydb::Common::KeyVals leafs;
+    Common::KeyVals leafs;
     leafs.insert(std::make_pair("bar", "xyz"));
     leafs.insert(std::make_pair("baz1", "xyz"));
     (void) db.replace("foo", leafs);
@@ -106,7 +131,7 @@ leafListCardinality()
 {
     std::list<std::string> files(1, "test_models/leaf_list.yang");
     Db db(files);
-    Ydb::Common::KeyVals leafs;
+    Common::KeyVals leafs;
     leafs.insert(std::make_pair("bar", "xyz"));
     leafs.insert(std::make_pair("baz1", "xyz1"));
     leafs.insert(std::make_pair("baz3", "xyz1"));
@@ -155,7 +180,7 @@ leafListDuplicate()
 {
     std::list<std::string> files(1, "test_models/leaf_list_simple.yang");
     Db db(files);
-    Ydb::Common::KeyVals leafs;
+    Common::KeyVals leafs;
     leafs.insert(std::make_pair("bar", "xyz"));
     leafs.insert(std::make_pair("baz1", "xyz1"));
     leafs.insert(std::make_pair("baz1", "xyz1"));
@@ -230,6 +255,8 @@ rfcs()
 int 
 main(int argc, char **argv)
 {
+    oneContainer();
+    /*
     dbValTest();
     simpleReplaceTest();
     leafCardinality();
@@ -243,5 +270,6 @@ main(int argc, char **argv)
     ianaCryptHash();
     rfc7317();
     rfcs();
+    */
     return 0;
 }

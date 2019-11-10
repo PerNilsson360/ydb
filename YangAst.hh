@@ -12,17 +12,23 @@
 #include <typeinfo>
 #include <cstdint>
 
+#include <xercesc/dom/DOM.hpp>
+
 #include "DbTree.hh"
 #include "DbVal.hh"
 #include "Common.hh"
 #include "Schema.hh"
 #include "SchemaTypes.hh"
 
-namespace Ydb
+namespace YDB
 {
+    class Node;
+    class InteriorNode;
+}
+
 class DbVal;
 class Schema;
-}
+class DomUtils;
 
 namespace Yang
 {
@@ -45,8 +51,8 @@ class Node
 public:
     Node() : _parent(0) {};
     virtual ~Node() {}
-    virtual void elaborate(Ydb::Schema* schema, Node* parent) { _parent = parent; };
-    virtual void eval(Ydb::Schema* schema) {};
+    virtual void elaborate(Schema* schema, Node* parent) { _parent = parent; };
+    virtual void eval(Schema* schema) {};
     virtual void addExtension(Extension*) { YDB_N_ERROR("Wrong type", getTypeName()); }
     virtual void addImport(Import*) { YDB_N_ERROR("Wrong type", getTypeName()); }
     virtual void addArgument(const std::string*) { YDB_N_ERROR("Wrong type", getTypeName()); }
@@ -67,10 +73,12 @@ public:
     // accessor methods;
     const Unknown* findUnknown(const std::string& name) const;
     virtual Grouping* findGrouping(const std::string& name) { return _parent->findGrouping(name); }
-    virtual const Ydb::DbVal* createKey(const Ydb::Common::KeyVals& leafs) const { YDB_N_ERROR("Wrong type", getTypeName()); }
-    virtual void createLeafs(const Ydb::Common::KeyVals& leafs, std::vector<Ydb::Vals>& vals) const { YDB_N_ERROR("Wrong type", getTypeName()); }
+    virtual const DbVal* createKey(const Common::KeyVals& leafs) const { YDB_N_ERROR("Wrong type", getTypeName()); }
+    virtual void createLeafs(const Common::KeyVals& leafs, std::vector<Vals>& vals) const { YDB_N_ERROR("Wrong type", getTypeName()); }
     virtual const Node* findNode(const std::string& name) const { YDB_N_ERROR("Wrong type", getTypeName()); }
     virtual const char* getTypeName() const = 0;
+    // crteate data node
+    virtual YDB::Node* create(YDB::Node* parent, DomUtils& domUtils, xercesc::DOMNode* dn) const { YDB_N_ERROR("Wrong type", getTypeName()); }
 protected:
     std::vector<Unknown*> _unknowns;
     Node* _parent;
@@ -86,7 +94,7 @@ class StringStatement : public Node
 {
 public:
     StringStatement(const std::string* s) : _s(s) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
+    void elaborate(Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
     const std::string& getString() const { return *_s; }
 private:
     std::unique_ptr<const std::string> _s;
@@ -96,7 +104,7 @@ class IntegerStatement : public Node
 {
 public:
     IntegerStatement(int64_t i) : _i(i) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
+    void elaborate(Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
 protected:
     int64_t _i;
 };
@@ -105,7 +113,7 @@ class BoolStatement : public Node
 {
 public:
     BoolStatement(bool b) : _b(b) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
+    void elaborate(Schema* schema, Node* parent) { Node::elaborate(schema, parent); };
 protected:
     bool _b;
 };
@@ -117,8 +125,8 @@ class StringBodyStatement : public Node
 public:
     StringBodyStatement(const std::string* s, Nodes* body) :
         _s(s), _body(body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    void eval(Ydb::Schema* schema);
+    void elaborate(Schema* schema, Node* parent);
+    void eval(Schema* schema);
     const std::string& getString() const { return *_s; }
 protected:
     std::unique_ptr<const std::string> _s;
@@ -128,13 +136,13 @@ protected:
 class QnameBodyStatement : public Node
 {
 public:
-    QnameBodyStatement(const Ydb::Common::Qname* qname, Nodes* body) :
+    QnameBodyStatement(const Common::Qname* qname, Nodes* body) :
         _qname(qname), _body(body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    void eval(Ydb::Schema* schema);
-    const Ydb::Common::Qname& getQname() const { return *_qname.get(); }
+    void elaborate(Schema* schema, Node* parent);
+    void eval(Schema* schema);
+    const Common::Qname& getQname() const { return *_qname.get(); }
 protected:
-    std::unique_ptr<const Ydb::Common::Qname> _qname;
+    std::unique_ptr<const Common::Qname> _qname;
     std::unique_ptr<Nodes> _body;
 };
 
@@ -148,8 +156,8 @@ public:
         StringBodyStatement(name, body) {}
     // These two below really needs the virtual keyword
     // since they have different signatures than the node ones
-    virtual void elaborate(Ydb::Schema* schema, Ydb::Modules* parent);
-    virtual void eval(Ydb::Schema* schema, Ydb::Modules* parent);
+    virtual void elaborate(Schema* schema, Modules* parent);
+    virtual void eval(Schema* schema, Modules* parent);
     void addExtension(Extension* extension) { _extensions.push_back(extension); }
     void addImport(Import* import);
     void addLeaf(LeafBase* leaf);
@@ -174,7 +182,7 @@ class Module : public ModuleBase
 public:
     Module(const std::string* name, Nodes* body) :
         ModuleBase(name, body) {}
-    void elaborate(Ydb::Schema* schema, Ydb::Modules* parent);
+    void elaborate(Schema* schema, Modules* parent);
     const char* getTypeName() const { typeid(this).name(); }
 private:
 };
@@ -184,7 +192,7 @@ class SubModule : public ModuleBase
 public:
     SubModule(const std::string* name, Nodes* body) :
         ModuleBase(name, body) {}
-    void elaborate(Ydb::Schema* schema, Ydb::Modules* parent);
+    void elaborate(Schema* schema, Modules* parent);
     const char* getTypeName() const { typeid(this).name(); }
 private:
 };
@@ -229,8 +237,8 @@ public:
            const Prefix* prefix, 
            const std::string* revision = 0) :
         _name(name), _prefix(prefix), _revision(revision), _module(0) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    virtual void eval(Ydb::Schema* schema);
+    void elaborate(Schema* schema, Node* parent);
+    virtual void eval(Schema* schema);
     const std::string& getName() const { return *_name; }
     const std::string& getPrefix() const { return _prefix->getString(); }
     const char* getTypeName() const { typeid(this).name(); }
@@ -322,7 +330,7 @@ class Extension : public StringBodyStatement
 public:
     Extension(const std::string* name, Nodes* body = 0) :
         StringBodyStatement(name, body), _argument(nullptr) {}
-    void elaborate(Ydb::Schema* schema, Node*);
+    void elaborate(Schema* schema, Node*);
     void addArgument(const std::string*);
     const std::string* getArgument() { return _argument.get(); }
     const char* getTypeName() const { typeid(this).name(); }
@@ -334,7 +342,7 @@ class Argument : public StringStatement
 {
 public:
     Argument(const std::string* prefix) : StringStatement(prefix) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { 
+    void elaborate(Schema* schema, Node* parent) { 
         StringStatement::elaborate(schema, parent);
         parent->addArgument(new std::string(getString())); 
     }
@@ -354,10 +362,10 @@ private:
 class Base : public Node
 {
 public:
-    Base(const Ydb::Common::Qname* name) : _name(name) {}
+    Base(const Common::Qname* name) : _name(name) {}
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    std::unique_ptr<const Ydb::Common::Qname> _name;
+    std::unique_ptr<const Common::Qname> _name;
 };
 
 class Feature : public StringBodyStatement
@@ -372,10 +380,10 @@ private:
 class IfFeature : public Node
 {
 public:
-    IfFeature(const Ydb::Common::Qname* name) : _name(name) {}
+    IfFeature(const Common::Qname* name) : _name(name) {}
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    std::unique_ptr<const Ydb::Common::Qname> _name;
+    std::unique_ptr<const Common::Qname> _name;
 };
 
 class Typedef : public StringBodyStatement
@@ -394,16 +402,16 @@ private:
 class Type : public QnameBodyStatement
 {
 public:
-    Type(const Ydb::Common::Qname* qname, Nodes* body = 0) :
+    Type(const Common::Qname* qname, Nodes* body = 0) :
         QnameBodyStatement(qname, body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
+    void elaborate(Schema* schema, Node* parent);
     void addType(Type* type) { _types.push_back(type); }
-    const Ydb::DbVal* create(const std::string& data) const;
+    const DbVal* create(const std::string& data) const;
     // Memory is owned by this obejct
     const std::string* getDefault() const;
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    std::unique_ptr<Ydb::SchemaType> _type;
+    std::unique_ptr<SchemaType> _type;
     std::vector<Type*> _types;
 };
 
@@ -481,55 +489,55 @@ private:
 class AbsoluteSchemaNodeId : public Node
 {
 public:
-    AbsoluteSchemaNodeId(const Ydb::Common::Qname* qname) : _qnames(1, qname) {}
+    AbsoluteSchemaNodeId(const Common::Qname* qname) : _qnames(1, qname) {}
     // @todo destructor to avoid mem leak
-    void add(const Ydb::Common::Qname* qname) { _qnames.push_back(qname); }
-    const Ydb::Common::Qnames& getQnames() const { return _qnames; }
-    Ydb::Common::Qnames& getQnames() { return _qnames; }
+    void add(const Common::Qname* qname) { _qnames.push_back(qname); }
+    const Common::Qnames& getQnames() const { return _qnames; }
+    Common::Qnames& getQnames() { return _qnames; }
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    Ydb::Common::Qnames _qnames;
+    Common::Qnames _qnames;
 };
 
 class DescendantSchemaNodeId : public Node
 {
 public:
-    DescendantSchemaNodeId(const Ydb::Common::Qname* qname, 
+    DescendantSchemaNodeId(const Common::Qname* qname, 
                            AbsoluteSchemaNodeId* asni = 0)
     { 
         _qnames.push_back(qname);
         if (asni != 0) {
-            Ydb::Common::Qnames& v = asni->getQnames();
+            Common::Qnames& v = asni->getQnames();
             _qnames.insert(_qnames.end(), v.begin(), v.end());
             v.clear();
             delete asni;
         }
     }
     // @todo destructor to avoid mem leak
-    void elaborate(Ydb::Schema* schema, Node* parent) { Node::elaborate(schema, parent); }
+    void elaborate(Schema* schema, Node* parent) { Node::elaborate(schema, parent); }
     void eval(Node* parent) const {}
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    Ydb::Common::Qnames _qnames;
+    Common::Qnames _qnames;
 };
 
 class Key : public Node
 {
 public:
-    Key(const Ydb::Common::Qnames* args) :
+    Key(const Common::Qnames* args) :
         _args(args) {}
     ~Key() {
-        std::for_each(_args->begin(), _args->end(), Ydb::Dtor<Ydb::Common::Qname>());
+        std::for_each(_args->begin(), _args->end(), Dtor<Common::Qname>());
         delete _args;
         _args = 0;
     }
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    const Ydb::Common::Qnames& getKeys() const {
+    void elaborate(Schema* schema, Node* parent);
+    const Common::Qnames& getKeys() const {
         return *_args;
     }
     const char* getTypeName() const { typeid(this).name(); }
 private:
-    const Ydb::Common::Qnames* _args;
+    const Common::Qnames* _args;
 };
 
 class Unique : public Node
@@ -592,10 +600,10 @@ private:
 class Uses : public QnameBodyStatement
 {
 public:
-    Uses(const Ydb::Common::Qname* qname, Nodes* body = 0) :
+    Uses(const Common::Qname* qname, Nodes* body = 0) :
         QnameBodyStatement(qname, body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    void eval(Ydb::Schema* schema);
+    void elaborate(Schema* schema, Node* parent);
+    void eval(Schema* schema);
     void addAugment(Augment* augment) { _augment.push_back(augment); }
     const char* getTypeName() const { typeid(this).name(); }
 private:
@@ -628,8 +636,8 @@ class Augment : public Node
 public:
     Augment(const AbsoluteSchemaNodeId* asni, Nodes* body) :
         _asni(asni), _body(body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    void eval(Ydb::Schema* schema);
+    void elaborate(Schema* schema, Node* parent);
+    void eval(Schema* schema);
     void addLeaf(LeafBase*);
     void addList(InteriorNode*);
     const char* getTypeName() const { typeid(this).name(); }
@@ -671,7 +679,7 @@ class Default : public StringStatement
 {
 public:
     Default(const std::string* s) : StringStatement(s) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
+    void elaborate(Schema* schema, Node* parent);
     const char* getTypeName() const { typeid(this).name(); }
 };
 
@@ -705,9 +713,9 @@ private:
 class Unknown : public QnameBodyStatement
 {
 public:
-    Unknown(const Ydb::Common::Qname* q, const std::string* s, Nodes* b) :
+    Unknown(const Common::Qname* q, const std::string* s, Nodes* b) :
         QnameBodyStatement(q, b), _s(s) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { QnameBodyStatement::elaborate(schema, parent); parent->addUnknown(this); }
+    void elaborate(Schema* schema, Node* parent) { QnameBodyStatement::elaborate(schema, parent); parent->addUnknown(this); }
     const std::string* getString() const { return _s.get(); }
     const char* getTypeName() const { typeid(this).name(); }
 private:
@@ -776,7 +784,7 @@ class Mandatory : public BoolStatement
 {
 public:
     Mandatory(bool c) : BoolStatement(c) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
+    void elaborate(Schema* schema, Node* parent);
     const char* getTypeName() const { typeid(this).name(); }
 private:
 };
@@ -826,7 +834,7 @@ class MinElements : public IntegerStatement
 {
 public:
     MinElements(int64_t v) : IntegerStatement(v) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { IntegerStatement::elaborate(schema, parent); parent->addMinElements(_i); }
+    void elaborate(Schema* schema, Node* parent) { IntegerStatement::elaborate(schema, parent); parent->addMinElements(_i); }
     const char* getTypeName() const { typeid(this).name(); }
 private:
 };
@@ -835,7 +843,7 @@ class MaxElements : public IntegerStatement
 {
 public:
     MaxElements(int64_t v) : IntegerStatement(v) {}
-    void elaborate(Ydb::Schema* schema, Node* parent) { IntegerStatement::elaborate(schema, parent); parent->addMaxElements(_i); }
+    void elaborate(Schema* schema, Node* parent) { IntegerStatement::elaborate(schema, parent); parent->addMaxElements(_i); }
     const char* getTypeName() const { typeid(this).name(); }
 private:
 };
@@ -856,7 +864,7 @@ class Grouping : public StringBodyStatement
 public:
     Grouping(const std::string* name, Nodes* body = 0) :
         StringBodyStatement(name, body) {}
-    virtual void elaborate(Ydb::Schema* schema, Node* parent);
+    virtual void elaborate(Schema* schema, Node* parent);
     void addLeaf(LeafBase*);
     void addList(InteriorNode*);
     const char* getTypeName() const { typeid(this).name(); }
@@ -879,9 +887,10 @@ public:
     void addList(InteriorNode* list);
     void addMinElements(unsigned int m) { _minElements.reset(new unsigned int(m)); }
     void addMaxElements(unsigned int m) { _maxElements.reset(new unsigned int(m)); }
-    void createLeafs(const Ydb::Common::KeyVals& leafs, std::vector<Ydb::Vals>& vals) const;
+    void createLeafs(const Common::KeyVals& leafs, std::vector<Vals>& vals) const;
     const LeafBase& getLeaf(unsigned int index) const { return *_indexToLeaf.at(index); }
     InteriorNode* findInteriorNode(const std::string& name);
+    const Node* findNode(const std::string& name) const; 
     const char* getTypeName() const { typeid(this).name(); }
 protected:
     std::unique_ptr<unsigned int> _minElements;
@@ -895,10 +904,11 @@ class Container : public InteriorNode
 {
 public:
     Container(const std::string* name, Nodes* body = 0) : InteriorNode(name, body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
+    void elaborate(Schema* schema, Node* parent);
     void addGrouping(Grouping* grouping);
     Grouping* findGrouping(const std::string& name);
     const char* getTypeName() const { typeid(this).name(); }
+    YDB::Node* create(YDB::Node* n, DomUtils& domUtils, xercesc::DOMNode* dn) const;
 private:
     Groupings _groupings;
 };
@@ -910,7 +920,7 @@ class LeafBase : public StringBodyStatement
 public:
     LeafBase(const std::string* name, Nodes* body) :
         StringBodyStatement(name, body) {}
-    void elaborate(Ydb::Schema* schema, Node* parent);
+    void elaborate(Schema* schema, Node* parent);
     bool validCardinality(unsigned int i) const;
     unsigned int getMinElements() const { return (_minElements.get() == 0 ? 0 : *_minElements); }
     void addType(Type* type);
@@ -931,9 +941,10 @@ class Leaf : public LeafBase
 {
 public:
     Leaf(const std::string* name, Nodes* body) : LeafBase(name, body) {}
-    void eval(Ydb::Schema* schema);
+    void eval(Schema* schema);
     void setMandatory(bool b);
     void addDefault(const std::string& d);
+    YDB::Node* create(YDB::Node* parent, DomUtils& domUtils, xercesc::DOMNode* dn) const;
     const char* getTypeName() const { typeid(this).name(); }
 private:
     std::unique_ptr<bool> _mandatory;
@@ -943,7 +954,7 @@ class LeafList : public LeafBase
 {
 public:
     LeafList(const std::string* name, Nodes* body) : LeafBase(name, body) {}
-    void eval(Ydb::Schema* schema);
+    void eval(Schema* schema);
     void addMinElements(unsigned int m) { _minElements.reset(new unsigned int(m)); }
     void addMaxElements(unsigned int m) { _maxElements.reset(new unsigned int(m)); }
     void addDefault(const std::string& d) { _defaults.push_back(d); }
@@ -955,10 +966,10 @@ class List : public InteriorNode
 {
 public:
     List(const std::string* name, Nodes* body) : InteriorNode(name, body) {} 
-    void elaborate(Ydb::Schema* schema, Node* parent);
-    void eval(Ydb::Schema* schema);
+    void elaborate(Schema* schema, Node* parent);
+    void eval(Schema* schema);
     void addKey(Key* key);
-    const Ydb::DbVal* createKey(const Ydb::Common::KeyVals& leafs) const;
+    const DbVal* createKey(const Common::KeyVals& leafs) const;
     void addGrouping(Grouping* grouping);
     Grouping* findGrouping(const std::string& name);
     const char* getTypeName() const { typeid(this).name(); }
