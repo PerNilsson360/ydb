@@ -24,7 +24,9 @@ clean :
 	rm ydb
 #	rm test
 #	rm schemaTest
-#	rm TAGS
+	rm TAGS
+	rm test/*.pyc
+	rm test/*~
 	rm test_models/*~
 	rm *~
 

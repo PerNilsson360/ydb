@@ -21,7 +21,7 @@ private:
     void read();
     DomUtils& _domUtils;
     const char*  _ydbConfigEnvVar = "YDB_CONFIG_FILE";
-    std::string _ydbConfigFile = "testModels/ydb-config.xml";
+    std::string _ydbConfigFile = "test_models/ydb-config.xml";
     std::string _runningDbFile = "/tmp/ydb-running.db";
     std::string _schemaPath;
     std::list<std::string> _schemas =  { "test_models/one-container.yang" }; 

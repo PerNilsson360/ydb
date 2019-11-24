@@ -63,7 +63,8 @@ DomUtils::serialize(const DOMNode* domNode) const
 void
 DomUtils::debugPrint(const char* info, const DOMNode* domNode) const
 {
-    std::cout << info << domNode << std::endl;
+    std::string text = serialize(domNode);
+    std::cout << info << text << std::endl;
 }
 
 xercesc::DOMDocument*

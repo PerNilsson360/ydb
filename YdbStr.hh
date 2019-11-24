@@ -14,6 +14,9 @@ class YdbStr
 public:
     YdbStr(const std::string& s) : _s(s) {}
     YdbStr(const XMLCh* x) {
+	if (x == nullptr) {
+	    return;
+	}
 	char* s = xercesc::XMLString::transcode(x);
 	_s = s;
 	xercesc::XMLString::release(&s);
