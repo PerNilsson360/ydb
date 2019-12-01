@@ -130,3 +130,14 @@ OperationFailed::createResponse(DomUtils& domUtils,
     return result;
 }
 
+std::string
+ResourceDenied::createResponse(DomUtils& domUtils) const
+{
+    return "ResourceDeined";
+}
+
+std::string
+ResourceDenied::createResponse(DomUtils& domUtils, DOMNode* rpc) const
+{
+    return "ResourceDeined";
+}

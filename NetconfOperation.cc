@@ -105,6 +105,7 @@ EditConfig::apply(Ydb& ydb)
 {
     DOMNode* configNode = nullptr;
     DOMNode* errorOptionNode = nullptr;
+    YdbStr defaultOperation(NetconfIdentities::MERGE);
     for (DOMNode* n = _rpc->getFirstChild();
 	 n != 0;
 	 n = n->getNextSibling()) {
@@ -122,11 +123,23 @@ EditConfig::apply(Ydb& ydb)
 		throw BadElement(ss, BadElement::Protocol);
 	    }
 	    errorOptionNode = n;
+	} else if (name == NetconfIdentities::DEFAULT_OPERATION) {
+	    defaultOperation = DomUtils::getText(n);
 	}
     }
     if (configNode != nullptr) {
 	Ydb::ErrorOption errorOption = getErrorOption(errorOptionNode);
-	ydb.merge(configNode, errorOption);
+	Ydb::EditOperation operation;
+	if (defaultOperation == NetconfIdentities::MERGE) {
+	    operation = Ydb::Merge;
+	} else if (defaultOperation == NetconfIdentities::REPLACE) {
+	    operation = Ydb::Replace;
+	} else if (defaultOperation == NetconfIdentities::NONE) {
+	    operation = Ydb::None;
+	} else {
+	    // throw
+	}
+	ydb.edit(configNode, operation, errorOption);
     } else {
 	std::cerr << "edit-config: did not contain config node"
 		  << std::endl;

@@ -28,10 +28,19 @@ public:
 	ContinueOnError,
 	RollbackOnError
     };
-    
+    enum EditOperation {
+	Merge,
+	Replace,
+	Create,
+	Delete,
+	Remove,
+	None
+    };
     Ydb(const Config& config, DomUtils& domUtils);
     void merge(const std::string& xml);
-    void merge(xercesc::DOMNode* node, ErrorOption errorOption);
+    void edit(xercesc::DOMNode* node,
+	      EditOperation,
+	      ErrorOption errorOption);
     xercesc::DOMNode* get(const std::string& xpath);
 private:
     void store();

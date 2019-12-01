@@ -17,7 +17,7 @@ private:
        "urn:ietf:params:ns:netconf:capability:startup:1.0\n"
      "</capability>\n"
    "</capabilities>\n"
-   "<session-id>4<session-id>\n"
+   "<session-id>4</session-id>\n"
  "</hello>\n"
  "]]>]]>";
 };

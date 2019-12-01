@@ -72,4 +72,21 @@ private:
     ErrorType _errorType;
 };
 
+class ResourceDenied : public NetconfException
+{
+public:
+    enum ErrorType {
+	Rpc,
+	Protocol,
+	Application
+    };
+    ResourceDenied(const std::stringstream& message, ErrorType errorType) :
+	NetconfException(message) {}
+    std::string createResponse(DomUtils& domUtils) const;
+    std::string createResponse(DomUtils& domUtils,
+			       xercesc::DOMNode* rpc) const override;
+private:
+    ErrorType _errorType;
+};
+
 #endif

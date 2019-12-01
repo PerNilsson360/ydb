@@ -7,8 +7,13 @@ class NetconfIdentities
 {
 public:
     static const YdbStr NETCONF_XMLNS;
+    static const YdbStr HELLO;
     static const YdbStr DATA;
     static const YdbStr CONFIG;
+    static const YdbStr DEFAULT_OPERATION;
+    static const YdbStr MERGE;
+    static const YdbStr REPLACE;
+    static const YdbStr NONE;
     static const YdbStr RPC;
     static const YdbStr RPC_REPLY;
 /*
@@ -279,7 +284,7 @@ Description:    Request could not be completed because the relevant
                 a "create" operation was attempted on data that
                 already exists.
 
-error-tag:      data-missing
+error-tag:      data-missingtc
 error-type:     application
 error-severity: error
 error-info:     none

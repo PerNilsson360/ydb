@@ -56,7 +56,9 @@ Ydb::merge(const std::string& xml)
 }
 
 void
-Ydb::merge(DOMNode* domNode, ErrorOption errorOption)
+Ydb::edit(DOMNode* domNode,
+	  EditOperation editOperation,
+	  ErrorOption errorOption)
 {
     for (DOMNode* n = domNode->getFirstChild();
 	 n != 0;
@@ -125,7 +127,7 @@ Ydb::read()
 	}
 	DOMNode* data = _domUtils.findChild(NetconfIdentities::DATA, doc);
 	if (data != nullptr) {
-	    merge(data, ContinueOnError);
+	    edit(data, Replace, ContinueOnError);
 	}
     } catch (const NetconfException& e) {
 	std::cerr << "READ: got netconfException" << std::endl;

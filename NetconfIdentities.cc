@@ -1,8 +1,14 @@
 #include "NetconfIdentities.hh"
 const YdbStr NetconfIdentities::NETCONF_XMLNS(
     "urn:ietf:params:xml:ns:netconf:base:1.0");
+const YdbStr NetconfIdentities::HELLO("hello");
 const YdbStr NetconfIdentities::DATA("data");
 const YdbStr NetconfIdentities::CONFIG("config");
+const YdbStr NetconfIdentities::DEFAULT_OPERATION(
+    "default-operation");
+const YdbStr NetconfIdentities::MERGE("merge");
+const YdbStr NetconfIdentities::REPLACE("replace");
+const YdbStr NetconfIdentities::NONE("none");
 const YdbStr NetconfIdentities::RPC("rpc");
 const YdbStr NetconfIdentities::RPC_REPLY("rpc-reply");
 const YdbStr NetconfIdentities::RPC_ERROR("rpc-error");

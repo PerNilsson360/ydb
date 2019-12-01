@@ -1,6 +1,6 @@
 CC = g++
 CXXFLAGS = -g -Winline  --std=c++14
-OBJECTS = Common.o YangAst.o DbVal.o DbTree.o Db.o Schema.o y.tab.o lex.yy.o Ydb.o Config.o Node.o NetconfMessage.o NetconfOperation.o NetconfResponse.o NetconfIdentities.o NetconfException.cc DomUtils.o YdbApi.o
+OBJECTS = Common.o YangAst.o DbVal.o DbTree.o Db.o Schema.o y.tab.o lex.yy.o Ydb.o Config.o Node.o NetconfMessage.o NetconfOperation.o NetconfResponse.o NetconfIdentities.o NetconfException.cc NetconfSessions.o DomUtils.o YdbApi.o
 
 main: $(OBJECTS)
 	$(CC) $(CXXFLAGS) $(OBJECTS) main.cc -o ydb -lxerces-c -lpthread
@@ -31,5 +31,5 @@ clean :
 	rm *~
 
 tags :
-	find . -name "*.[chCH]" -print | etags -	
+	find . -name "*.cc" -o -name "*.hh" -print | etags -	
 

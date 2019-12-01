@@ -90,13 +90,9 @@ class TestBase(unittest.TestCase):
         """
         data = self.recv_xml()
         root = et.fromstring(data)
-        hello_found = False
-        for child in root:
-            if child.tag == 'hello':
-                hello_found = True
-        self.assertTrue(hello_found)
+        self.assertTrue(root.tag == "hello")
 
-    def recv_xml():
+    def recv_xml(self):
         """
         Receivis a Netconf message from socket
         and stripps away "]]>]]>"

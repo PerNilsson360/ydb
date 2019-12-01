@@ -21,6 +21,7 @@
 #include "CapabilityExchange.hh"
 #include "NetconfMessage.hh"
 #include "NetconfException.hh"
+#include "NetconfSessions.hh"
 
 #include "YdbApi.hh"
 
@@ -40,27 +41,17 @@ void
 run()
 {
     int opt = TRUE;   
-    int master_socket , addrlen , new_socket , client_socket[30] ,  
-	max_clients = 30 , activity, i , valread , sd;   
+    int master_socket, addrlen, activity, valread;   
     int max_sd;   
     struct sockaddr_in address;   
          
     char buffer[1025];  //data buffer of 1K  
          
-    //set of socket descriptors  
-    fd_set readfds;   
-         
-
     DomUtils domUtils;
     Config config(domUtils);
     Ydb ydb(config, domUtils);
-    
-    //initialise all client_socket[] to 0 so not checked  
-    for (i = 0; i < max_clients; i++)   
-    {   
-        client_socket[i] = 0;   
-    }   
-         
+    NetconfSessions sessions;
+             
     //create a master socket  
     if ((master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)   
     {   
@@ -100,9 +91,10 @@ run()
     //accept the incoming connection  
     addrlen = sizeof(address);   
     puts("Waiting for connections ...");   
-         
-    while(TRUE)   
-    {   
+
+    //set of socket descriptors  
+    fd_set readfds;   
+    while (true) {   
         //clear the socket set  
         FD_ZERO(&readfds);   
      
@@ -111,100 +103,89 @@ run()
         max_sd = master_socket;   
              
         //add child sockets to set  
-        for ( i = 0 ; i < max_clients ; i++)   
-        {   
+        for (auto&& session : sessions.getSessions()) {   
             //socket descriptor  
-            sd = client_socket[i];   
+            int socket = session.getSocket();   
                  
             //if valid socket descriptor then add to read list  
-            if(sd > 0)   
-                FD_SET( sd , &readfds);   
+            if (socket > 0) {
+                FD_SET(socket, &readfds);
+	    }
                  
             //highest file descriptor number, need it for the select function  
-            if(sd > max_sd)   
-                max_sd = sd;   
+            if (socket > max_sd) {   
+                max_sd = socket;
+	    }
         }   
      
         //wait for an activity on one of the sockets , timeout is NULL ,  
         //so wait indefinitely  
         activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);   
        
-        if ((activity < 0) && (errno!=EINTR))   
-        {   
+        if ((activity < 0) && (errno != EINTR)) {   
             printf("select error");   
         }   
              
         //If something happened on the master socket ,  
         //then its an incoming connection  
-        if (FD_ISSET(master_socket, &readfds))   
-        {   
-            if ((new_socket = accept(master_socket,  
-				     (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)   
-            {   
+        if (FD_ISSET(master_socket, &readfds)) {
+	    int socket;
+            if ((socket = accept(master_socket,  
+				 (struct sockaddr *)&address,
+				 (socklen_t*)&addrlen)) < 0) {   
                 perror("accept");   
                 exit(EXIT_FAILURE);   
             }   
              
             //inform user of socket number - used in send and receive commands  
-            printf("New connection , socket fd is %d , ip is : %s , port : %d  \n" ,
-		   new_socket ,
+            printf("New connection, socket fd is %d , ip is : %s , port : %d  \n" ,
+		   socket,
 		   inet_ntoa(address.sin_addr) ,
 		   ntohs 
 		   (address.sin_port));   
-           
-	    CapabilityExchange capabilityExchange;
-	    const char* message = capabilityExchange.getMessage(); 
-            if (send(new_socket, message, strlen(message), 0) != strlen(message) ) {   
-                perror("send");   
-            }   
-                 
-            puts("Capability exchange sent successfully");   
-                 
-            //add new socket to array of sockets  
-            for (i = 0; i < max_clients; i++)   
-            {   
-                //if position is empty  
-                if( client_socket[i] == 0 )   
-                {   
-                    client_socket[i] = new_socket;   
-                    printf("Adding to list of sockets as %d\n" , i);   
-                         
-                    break;   
-                }   
-            }   
-        }   
+
+	    try {
+		sessions.newSession(socket);
+		CapabilityExchange capabilityExchange;
+		const char* message = capabilityExchange.getMessage();
+		size_t length = strlen(message);
+		if (send(socket, message, length, 0) != length) {   
+		    perror("send");   
+		}
+		puts("Capability exchange sent");   
+	    } catch (const NetconfException& e) {
+		std::cerr << "Got: " << e.what() << std::endl;
+	    }
+	}   
              
-        //else its some IO operation on some other socket 
-        for (i = 0; i < max_clients; i++)   
-        {   
-            sd = client_socket[i];   
-                 
-            if (FD_ISSET( sd , &readfds))   
+        //else its some IO operation on some other socket
+	for (auto&& session : sessions.getSessions()) {   
+            int socket = session.getSocket();   
+            if (FD_ISSET(socket, &readfds))   
             {   
                 //Check if it was for closing , and also read the  
                 //incoming message  
-                if ((valread = read( sd , buffer, 1024)) == 0)   
-                {   
+                if ((valread = read(socket, buffer, 1024)) == 0) {   
                     //Somebody disconnected , get his details and print  
-                    getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);   
+                    getpeername(socket , (struct sockaddr*)&address , (socklen_t*)&addrlen);   
                     printf("Host disconnected , ip %s , port %d \n" ,  
 			   inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
                          
                     //Close the socket and mark as 0 in list for reuse  
-                    close( sd );   
-                    client_socket[i] = 0;   
-                }   
-                     
-                //Echo back the message that came in  
-                else 
-                {   
+                    close(socket);   
+		    session.reset();
+                } else {   
                     //set the string terminating NULL byte on the end  
                     //of the data read  
                     buffer[valread] = '\0';
 		    std::string response;
 		    try {
 			NetconfMessage message(domUtils, buffer, valread);
-			response = message.apply(ydb);
+			if (message.isHello()) {
+			    std::cerr << "got hello message" << std::endl;
+			} else {
+			    response = message.apply(ydb);
+			}
 		    } catch (const NetconfException& e) {
 			std::cerr << "Got exception: " << e.what() << std::endl;
 			response = e.what();
@@ -213,9 +194,8 @@ run()
 			std::cerr << "Exception: \n" << message << "\n";
 			XMLString::release(&message);
 		    }
-
-		    std::cout << "sending response: "<< response << std::endl;
-                    send(sd, response.c_str(), response.size(), 0);   
+		    std::cerr << "sending response: "<< response << std::endl;
+                    send(socket, response.c_str(), response.size(), 0);   
                 }   
             }   
         }   

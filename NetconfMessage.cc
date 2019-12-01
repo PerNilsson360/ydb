@@ -14,6 +14,7 @@
 #include "NetconfException.hh"
 #include "NetconfOperation.hh"
 #include "NetconfResponse.hh"
+#include "NetconfIdentities.hh"
 
 using namespace xercesc;
 
@@ -29,11 +30,21 @@ NetconfMessage::NetconfMessage(DomUtils& domutils,
 	ss << "Can not find message termination sequence.";
 	throw OperationFailed(ss, OperationFailed::Protocol);
     }
-    _rpc = findRpc(m.c_str(), len);
+    _document = _domUtils.parse(message, length);
+    if (_document == nullptr) {
+	std::stringstream ss;
+	ss << "Unkown parsing error";
+	throw OperationFailed(ss, OperationFailed::Protocol);
+    }
+    _hello = _domUtils.findChild(NetconfIdentities::HELLO,
+				 _document);
+    if (_hello != nullptr) {
+	return;
+    }
+    _rpc = findRpc();
     findMessageId(_rpc);
     _netconfResponse.reset(new NetconfResponse(_domUtils, _rpc));
     _operation = NetconfOperation::create(_rpc);
-
 }
 
 std::string
@@ -52,14 +63,8 @@ NetconfMessage::apply(Ydb& ydb)
 }
 
 DOMNode*
-NetconfMessage::findRpc(const char* message, unsigned int length)
+NetconfMessage::findRpc()
 {
-    _document = _domUtils.parse(message, length);
-    if (_document == nullptr) {
-	std::stringstream ss;
-	ss << "Unkown parsing error";
-	throw OperationFailed(ss, OperationFailed::Protocol);
-    }
     DOMNode* result = nullptr;
     for (DOMNode* n = _document->getFirstChild();
 	 n != 0;
